@@ -1,6 +1,6 @@
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QPixmap, QPainter, QPen, QColor, QMouseEvent
-from PyQt6.QtWidgets import  QLabel
+from PyQt6.QtWidgets import QLabel, QPushButton
 
 
 class CanvasWidget(QLabel):
@@ -32,3 +32,10 @@ class CanvasWidget(QLabel):
             self.setPixmap(self.canvas)
             self.last_mouse_position = current_position
 
+
+class ColorButton(QPushButton):
+    def __init__(self, parent=None, color = None, key = None):
+        super().__init__()
+        self.setStyleSheet(f"background-color:{color};border-radius:0px;")
+        self.setGeometry(0, 0, 40, 40)
+        self.pressed.connect(lambda: setattr(self, 'key', key))
