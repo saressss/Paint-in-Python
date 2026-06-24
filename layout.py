@@ -1,8 +1,10 @@
 import sys
 from PyQt6 import QtCore
 from PyQt6.QtCore import QTimer
+from PyQt6.QtWidgets import QScrollArea
 from classes import *
 from RadialColorMenu import EditPaletteDialog
+from functional_buttons import functionalButton
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -88,15 +90,19 @@ class Ui_MainWindow(object):
         self.gridLayout_6.addWidget(self.color_swap_16, 7, 0, 1, 1)
         self.color_swap_16.pressed.connect(lambda: setattr(self, 'primaryColor', "DarkOrange"))
 
-        self.canvas = CanvasWidget(parent=self.centralwidget)
-        self.canvas.setGeometry(QtCore.QRect(0, 230, 1920, 1000))
+        self.scroll_area = QScrollArea(parent=self.centralwidget)
+        self.scroll_area.setGeometry(QtCore.QRect(0, 230, 1920, 800))
+        self.scroll_area.setWidgetResizable(False)
+
+        self.canvas = CanvasWidget(parent=self.scroll_area, option="pencil", main=self)
+        self.scroll_area.setWidget(self.canvas)
 
         self.colorShow_Choose = radialColorButton(parent=self.centralwidget)
         self.colorShow_Choose.setGeometry(QtCore.QRect(90, 40, 60, 60))
         self.colorShow_Choose.pressed.connect(self.open_ColorRadialMenu)
 
         self.colorShow_Choose1 = radialColorButton(parent=self.centralwidget)
-        self.colorShow_Choose1.setGeometry(QtCore.QRect(90, 100, 60, 60))
+        self.colorShow_Choose1.setGeometry(QtCore.QRect(90, 120, 60, 60))
         self.colorShow_Choose1.pressed.connect(self.open_ColorRadialMenu1)
 
         self.verticalLayoutWidget = QtWidgets.QWidget(parent=self.centralwidget)
@@ -122,25 +128,34 @@ class Ui_MainWindow(object):
         self.verticalLayout.addWidget(self.opacitySlider)
 
         self.gridLayoutWidget_3 = QtWidgets.QWidget(parent=self.centralwidget)
-        self.gridLayoutWidget_3.setGeometry(QtCore.QRect(1100, 0, 271, 201))
+        self.gridLayoutWidget_3.setGeometry(QtCore.QRect(600, 0, 270, 200))
         self.gridLayoutWidget_3.setObjectName("gridLayoutWidget_3")
         self.gridLayout_5 = QtWidgets.QGridLayout(self.gridLayoutWidget_3)
         self.gridLayout_5.setContentsMargins(0, 0, 0, 0)
-        self.gridLayout_5.setObjectName("gridLayout_5")
 
-        self.horizontalLayoutWidget = QtWidgets.QWidget(parent=self.centralwidget)
-        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(570, 0, 161, 91))
-        self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
-        self.horizontalLayout_3 = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
-        self.horizontalLayout_3.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        self.pushButton_2 = QtWidgets.QPushButton(parent=self.horizontalLayoutWidget)
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.horizontalLayout_3.addWidget(self.pushButton_2)
-        self.pushButton = QtWidgets.QPushButton(parent=self.horizontalLayoutWidget)
-        self.pushButton.setObjectName("pushButton")
-        self.horizontalLayout_3.addWidget(self.pushButton)
+        self.funcButton1 = functionalButton(option="pencil", icon="pencil.jpg")
+        self.gridLayout_5.addWidget(self.funcButton1, 0, 0, 1, 1)
+        self.funcButton2 = functionalButton(option="glass", icon="glass.png")
+        self.gridLayout_5.addWidget(self.funcButton2, 1, 0, 1, 1)
+        self.funcButton3 = functionalButton(option="pipette", icon="pipiette.png")
+        self.gridLayout_5.addWidget(self.funcButton3, 2, 0, 1, 1)
+        self.funcButton4 = functionalButton(option="rubber", icon="rubber.png")
+        self.gridLayout_5.addWidget(self.funcButton4, 0, 1, 1, 1)
+        self.funcButton5 = functionalButton(option="floodfill", icon="floodfill.png")
+        self.gridLayout_5.addWidget(self.funcButton5, 1, 1, 1, 1)
+        self.funcButton6 = functionalButton(option="text", icon="text.png")
+        self.gridLayout_5.addWidget(self.funcButton6, 2, 1, 1, 1)
+
+        self.funcButton1.pressed.connect(lambda: self.canvas.set_tool("pencil"))
+        self.funcButton2.pressed.connect(lambda: self.canvas.set_tool("glass"))
+        self.funcButton3.pressed.connect(lambda: self.canvas.set_tool("pipette"))
+        self.funcButton4.pressed.connect(lambda: self.canvas.set_tool("rubber"))
+        self.funcButton5.pressed.connect(lambda: self.canvas.set_tool("floodfill"))
+        self.funcButton6.pressed.connect(lambda: self.canvas.set_tool("text"))
+
+
         MainWindow.setCentralWidget(self.centralwidget)
+
         self.menubar = QtWidgets.QMenuBar(parent=MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1747, 21))
         self.menubar.setObjectName("menubar")
@@ -173,6 +188,9 @@ class Ui_MainWindow(object):
         self.canvas.pen = QPen(QColor(self.primaryColor), self.widthSlide.value(), Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
         self.colorShow_Choose.colorChange(self.primaryColor)
         self.colorShow_Choose1.colorChange(self.secondaryColor)
+
+    def change_primary_color(self, color_name):
+        self.primaryColor = color_name
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
