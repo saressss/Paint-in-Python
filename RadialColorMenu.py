@@ -1,10 +1,9 @@
 import sys
 from PyQt6.QtWidgets import (QApplication, QDialog, QWidget, QLabel,
                              QLineEdit, QComboBox, QPushButton,
-                             QGridLayout, QHBoxLayout, QVBoxLayout)
+                             QGridLayout, QHBoxLayout, QVBoxLayout, QSlider)
 from PyQt6.QtGui import QColor, QPainter, QLinearGradient, QMouseEvent, QPixmap, QImage
 from PyQt6.QtCore import Qt, pyqtSignal
-from classes import radialColorButton
 
 class ColorSpectrumWidget(QLabel):
     colorChanged = pyqtSignal(QColor)
@@ -14,13 +13,22 @@ class ColorSpectrumWidget(QLabel):
         self.setMinimumSize(250, 250)
         self.pixmap_canvas = QPixmap()
         self.image_canvas = QImage()
+        self.brightness = 255
+
+    def set_brightness(self, value):
+        self.brightness = value
+        self.redraw_spectrum()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        self.redraw_spectrum()
+
+    def redraw_spectrum(self):
+        if self.width() <= 0 or self.height() <= 0:
+            return
 
         pixmap = QPixmap(self.size())
         painter = QPainter(pixmap)
-
         hue_gradient = QLinearGradient(0, 0, self.width(), 0)
         hue_gradient.setColorAt(0.0, QColor(255, 0, 0))
         hue_gradient.setColorAt(0.16, QColor(255, 255, 0))
@@ -32,9 +40,18 @@ class ColorSpectrumWidget(QLabel):
         painter.fillRect(self.rect(), hue_gradient)
 
         val_gradient = QLinearGradient(0, 0, 0, self.height())
-        val_gradient.setColorAt(0.0, QColor(0, 0, 0, 0))
-        val_gradient.setColorAt(1.0, QColor(0, 0, 0, 255))
+        val_gradient.setColorAt(0.0, QColor(255, 255, 255, 0))
+        val_gradient.setColorAt(1.0, QColor(255, 255, 255, 255))
         painter.fillRect(self.rect(), val_gradient)
+
+        darkness_gradient = QLinearGradient(0, 0, 0, self.height())
+
+        target_alpha = 255 - self.brightness
+
+        darkness_gradient.setColorAt(0.0, QColor(0, 0, 0, 0)) 
+        darkness_gradient.setColorAt(1.0, QColor(0, 0, 0, target_alpha))
+
+        painter.fillRect(self.rect(), darkness_gradient)
 
         painter.end()
 
@@ -62,6 +79,7 @@ class EditPaletteDialog(QDialog):
         super().__init__()
         self.setWindowTitle("Редагувати палітру")
         self.setFixedSize(650, 550)
+        self.currentColor = "#FFFFFF"
 
         self.setStyleSheet("""
             QDialog { background-color: #1e1e1e; }
@@ -90,22 +108,38 @@ class EditPaletteDialog(QDialog):
         self.spectrum.colorChanged.connect(self.update_fields)
         top_layout.addWidget(self.spectrum, stretch=2)
 
-        self.brightness_slider = QWidget()
+        self.brightness_slider = QSlider(Qt.Orientation.Vertical)
         self.brightness_slider.setFixedWidth(20)
+        self.brightness_slider.setMinimum(0)
+        self.brightness_slider.setMaximum(255)
+        self.brightness_slider.setValue(255)
+
         self.brightness_slider.setStyleSheet("""
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                        stop:0 #ffffff, stop:1 #000000);
-            border-radius: 10px;
+            QSlider::groove:vertical {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                            stop:0 #ffffff, stop:1 #000000);
+                width: 20px;         
+                border-radius: 10px; 
+            }
+            QSlider::handle:vertical {
+                background: transparent;
+                border: none;
+                height: 0px;
+            }
         """)
+
+        self.brightness_slider.valueChanged.connect(self.spectrum.set_brightness)
+
         top_layout.addWidget(self.brightness_slider)
+
         fields_layout = QVBoxLayout()
         fields_layout.setSpacing(10)
 
-        self.hex_input = QLineEdit("#000000")
+        self.hex_input = QLineEdit("#FFFFFF")
         fields_layout.addWidget(self.hex_input)
 
-        self.rgbLayout = QLabel()
-        self.rgbLayout.setText("RGB")
+        self.rgbLayout = QLabel("RGB")
+        self.rgbLayout.setStyleSheet("color: white;")
         fields_layout.addWidget(self.rgbLayout)
 
         self.rgb_inputs = {}
@@ -113,7 +147,7 @@ class EditPaletteDialog(QDialog):
 
         for key, label_text in colors_labels:
             row_layout = QHBoxLayout()
-            num_input = QLineEdit("0")
+            num_input = QLineEdit("255")
             num_input.setFixedWidth(80)
 
             lbl = QLabel(label_text)
@@ -122,14 +156,8 @@ class EditPaletteDialog(QDialog):
             row_layout.addWidget(num_input)
             row_layout.addWidget(lbl)
             fields_layout.addLayout(row_layout)
-
             self.rgb_inputs[key] = num_input
 
-        self.HorizontalLayout = QHBoxLayout()
-        main_layout.addLayout(self.HorizontalLayout)
-
-        self.colorButton = radialColorButton()
-        self.HorizontalLayout.addWidget(self.colorButton)
         fields_layout.addStretch()
         top_layout.addLayout(fields_layout, stretch=1)
         main_layout.addLayout(top_layout)
@@ -139,27 +167,37 @@ class EditPaletteDialog(QDialog):
         ok_btn.setObjectName("okButton")
         cancel_btn = QPushButton("Скасувати")
         cancel_btn.clicked.connect(self.reject)
-
         ok_btn.clicked.connect(self.accept)
-        cancel_btn.clicked.connect(self.reject)
 
         bottom_buttons.addWidget(ok_btn)
         bottom_buttons.addWidget(cancel_btn)
         main_layout.addLayout(bottom_buttons)
 
-    def get_selected_color(self):
-        return self.currentColor
-
     def update_fields(self, color: QColor):
         self.hex_input.setText(color.name().upper())
         self.currentColor = color.name()
-        self.colorButton.colorChange(color.name())
+
         self.rgb_inputs["R"].setText(str(color.red()))
         self.rgb_inputs["G"].setText(str(color.green()))
         self.rgb_inputs["B"].setText(str(color.blue()))
 
         self.brightness_slider.setStyleSheet(f"""
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                        stop:0 {color.name()}, stop:1 #000000);
-            border-radius: 10px;
+            QSlider::groove:vertical {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                            stop:0 {color.name()}, stop:1 #000000);
+                width: 20px;         
+                border-radius: 10px; 
+            }}
+            QSlider::handle:vertical {{
+                background: transparent;
+                border: none;
+                height: 0px;
+            }}
         """)
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    dialog = EditPaletteDialog()
+    dialog.show()
+    sys.exit(app.exec())
