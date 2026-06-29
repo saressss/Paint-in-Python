@@ -1,10 +1,12 @@
 import sys
 from PyQt6 import QtCore
 from PyQt6.QtCore import QTimer
-from PyQt6.QtWidgets import QScrollArea
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QScrollArea, QFileDialog, QMessageBox
 from classes import *
 from RadialColorMenu import EditPaletteDialog
 from functional_buttons import functionalButton
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -13,12 +15,12 @@ class Ui_MainWindow(object):
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
 
         self.gridLayoutWidget = QtWidgets.QWidget(parent=self.centralwidget)
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 10, 26, 210))
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 20, 26, 210))
         self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
         self.gridLayout.setContentsMargins(2, 2, 2, 2)
 
         self.gridLayoutWidget_4 = QtWidgets.QWidget(parent=self.centralwidget)
-        self.gridLayoutWidget_4.setGeometry(QtCore.QRect(46, 10, 26, 210))
+        self.gridLayoutWidget_4.setGeometry(QtCore.QRect(46, 20, 26, 210))
         self.gridLayout_6 = QtWidgets.QGridLayout(self.gridLayoutWidget_4)
         self.gridLayout_6.setContentsMargins(2, 2, 2, 2)
 
@@ -105,8 +107,41 @@ class Ui_MainWindow(object):
         self.colorShow_Choose1.setGeometry(QtCore.QRect(90, 120, 60, 60))
         self.colorShow_Choose1.pressed.connect(self.open_ColorRadialMenu1)
 
+        self.brushComboBox = QtWidgets.QComboBox(parent=self.centralwidget)
+        self.brushComboBox.setGeometry(QtCore.QRect(180, 90, 200, 30))
+
+        self.brushComboBox.addItems([
+            "Пензель",
+            "Каліграфічний пензель",
+            "Каліграфічне перо",
+            "Розпилювач",
+            "Пензель для олії",
+            "Пастель",
+            "Маркер",
+            "Звичайний олівець",
+        ])
+
+        self.brushComboBox.setStyleSheet("""
+                    QComboBox {
+                        background-color: #2d2d2d;
+                        color: white;
+                        border: 1px solid #3e3e3e;
+                        border-radius: 4px;
+                        padding-left: 6px;
+                        font-family: Arial;
+                        font-size: 12px;
+                    }
+                    QComboBox QAbstractItemView {
+                        background-color: #2d2d2d;
+                        color: white;
+                        selection-background-color: #2b5b84;
+                    }
+                """)
+
+        self.brushComboBox.currentTextChanged.connect(self.canvas.set_brush_style)
+
         self.verticalLayoutWidget = QtWidgets.QWidget(parent=self.centralwidget)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(260, 0, 330, 200))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(400, 0, 330, 200))
 
         self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setContentsMargins(10, 0, 10, 10)
@@ -126,9 +161,12 @@ class Ui_MainWindow(object):
         self.opacitySlider = QtWidgets.QSlider(parent=self.verticalLayoutWidget)
         self.opacitySlider.setOrientation(QtCore.Qt.Orientation.Horizontal)
         self.verticalLayout.addWidget(self.opacitySlider)
+        self.opacitySlider.setMinimum(1)
+        self.opacitySlider.setMaximum(255)
+        self.opacitySlider.setValue(255)
 
         self.gridLayoutWidget_3 = QtWidgets.QWidget(parent=self.centralwidget)
-        self.gridLayoutWidget_3.setGeometry(QtCore.QRect(600, 0, 270, 200))
+        self.gridLayoutWidget_3.setGeometry(QtCore.QRect(750, 20, 270, 200))
         self.gridLayoutWidget_3.setObjectName("gridLayoutWidget_3")
         self.gridLayout_5 = QtWidgets.QGridLayout(self.gridLayoutWidget_3)
         self.gridLayout_5.setContentsMargins(0, 0, 0, 0)
@@ -146,26 +184,42 @@ class Ui_MainWindow(object):
         self.funcButton6 = functionalButton(option="text", icon="text.png")
         self.gridLayout_5.addWidget(self.funcButton6, 2, 1, 1, 1)
 
-        self.funcButton1.pressed.connect(lambda: self.canvas.set_tool("pencil"))
-        self.funcButton2.pressed.connect(lambda: self.canvas.set_tool("glass"))
-        self.funcButton3.pressed.connect(lambda: self.canvas.set_tool("pipette"))
-        self.funcButton4.pressed.connect(lambda: self.canvas.set_tool("rubber"))
-        self.funcButton5.pressed.connect(lambda: self.canvas.set_tool("floodfill"))
-        self.funcButton6.pressed.connect(lambda: self.canvas.set_tool("text"))
+        self.funcButton1.pressed.connect(lambda: self.canvas.set_tool("instrument","pencil"))
+        self.funcButton2.pressed.connect(lambda: self.canvas.set_tool("instrument","glass"))
+        self.funcButton3.pressed.connect(lambda: self.canvas.set_tool("instrument","pipette"))
+        self.funcButton4.pressed.connect(lambda: self.canvas.set_tool("instrument","rubber"))
+        self.funcButton5.pressed.connect(lambda: self.canvas.set_tool("instrument","floodfill"))
+        self.funcButton6.pressed.connect(lambda: self.canvas.set_tool("instrument","text"))
 
+        self.scroll =  QtWidgets.QScrollArea(parent=self.centralwidget)
+        self.scroll.setGeometry(QtCore.QRect(1050, 20, 300, 200))
+        self.scroll.setFixedWidth(300)
+        self.gridLayoutWidget1 = QtWidgets.QGridLayout(parent=self.scroll)
+        self.gridLayoutWidget1.setContentsMargins(5, 5, 5, 5)
+        self.gridLayoutWidget1.setSpacing(5)
+
+        self.iconArray = [
+            QIcon("iconsDraw/line.png"),QIcon("iconsDraw/curve.png"),QIcon("iconsDraw/circle.png"),QIcon("iconsDraw/square.png"),QIcon("iconsDraw/roundSquare.png"),QIcon("iconsDraw/choose.png"),
+            QIcon("iconsDraw/triangle.png"), QIcon("iconsDraw/righttriangle.png"), QIcon("iconsDraw/diamond.png"), QIcon("iconsDraw/pentagon.png"), QIcon("iconsDraw/hexagon.png"), QIcon("iconsDraw/arrowR.png"),
+            QIcon("iconsDraw/arrowL.png"), QIcon("iconsDraw/arrowU.png"), QIcon("iconsDraw/arrowD.png"), QIcon("iconsDraw/star4.png"), QIcon("iconsDraw/star.png"), QIcon("iconsDraw/star6.png"),
+            QIcon("iconsDraw/chat_Bublble.png"), QIcon("iconsDraw/cloudRound.png"), QIcon("iconsDraw/cloud.png"), QIcon("iconsDraw/favorite.png"), QIcon("iconsDraw/bolt.png"),
+        ]
+
+        j = -1
+        for i in range(23):
+            btn = QtWidgets.QPushButton()
+            btn.setFixedSize(48, 48)
+
+            btn.setIconSize(QtCore.QSize(44, 44))
+            btn.setIcon(self.iconArray[i])
+            btn.pressed.connect(lambda checked=False, idx=i: self.canvas.set_tool("shape", f"{idx+1}"))
+
+            if(i%6 == 0):
+                j += 1
+
+            self.gridLayoutWidget1.addWidget(btn, j, i%6, 1, 1)
 
         MainWindow.setCentralWidget(self.centralwidget)
-
-        self.menubar = QtWidgets.QMenuBar(parent=MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1747, 21))
-        self.menubar.setObjectName("menubar")
-        self.menuPaint = QtWidgets.QMenu(parent=self.menubar)
-        self.menuPaint.setObjectName("menuPaint")
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(parent=MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
-        self.menubar.addAction(self.menuPaint.menuAction())
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.Update)
@@ -183,9 +237,52 @@ class Ui_MainWindow(object):
             chosen_color = dialog.get_selected_color()
             self.secondaryColor = chosen_color
 
+    def closeEvent(self, event):
+        main_win = self.centralwidget.window()
+
+        reply = QMessageBox.question(
+            main_win,
+            "Вихід з програми",
+            "У вас є незбережені зміни. Бажаєте зберегти малюнок перед виходом?",
+            QMessageBox.StandardButton.Save |
+            QMessageBox.StandardButton.Discard |
+            QMessageBox.StandardButton.Cancel
+        )
+
+        if reply == QMessageBox.StandardButton.Save:
+            file_path, _ = QFileDialog.getSaveFileName(
+                main_win,
+                caption="Зберегти малюнок перед виходом",
+                directory="canvas_image.png",
+                filter="PNG Files (*.png);;All Files (*)"
+            )
+
+            if file_path:
+                if hasattr(self.canvas, 'save_to_png'):
+                    saved = self.canvas.save_to_png(file_path)
+                else:
+                    saved = self.canvas.canvas.save(file_path, "PNG")
+
+                if saved:
+                    event.accept()
+                else:
+                    QMessageBox.warning(main_win, "Помилка", "Не вдалося зберегти файл.")
+                    event.ignore()
+            else:
+                event.ignore()
+        elif reply == QMessageBox.StandardButton.Discard:
+            event.accept()
+        else:
+            event.ignore()
+
+
     def Update(self):
-        self.canvas.pen1 = QPen(QColor(self.secondaryColor), self.widthSlide.value(), Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
-        self.canvas.pen = QPen(QColor(self.primaryColor), self.widthSlide.value(), Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
+
+        color_Op_pr = QColor(QColor(self.primaryColor).red(), QColor(self.primaryColor).green(), QColor(self.primaryColor).blue(), self.opacitySlider.value())
+        color_Op_se = QColor(QColor(self.secondaryColor).red(), QColor(self.secondaryColor).green(),QColor(self.secondaryColor).blue(), self.opacitySlider.value())
+
+        self.canvas.pen1 = QPen(color_Op_se, self.widthSlide.value(), Qt.PenStyle.SolidLine)
+        self.canvas.pen = QPen(color_Op_pr, self.widthSlide.value(), Qt.PenStyle.SolidLine)
         self.colorShow_Choose.colorChange(self.primaryColor)
         self.colorShow_Choose1.colorChange(self.secondaryColor)
 
@@ -197,5 +294,7 @@ if __name__ == "__main__":
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
+
+    MainWindow.closeEvent = ui.closeEvent
     MainWindow.show()
     sys.exit(app.exec())
